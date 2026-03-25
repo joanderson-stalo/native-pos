@@ -1,0 +1,129 @@
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "org.jetbrains.kotlin.kapt"
+apply plugin: "com.facebook.react"
+
+react {
+    // Keep default React Native settings for 0.74
+}
+
+def enableProguardInReleaseBuilds = false
+def jscFlavor = "org.webkit:android-jsc:+"
+
+android {
+    ndkVersion rootProject.ext.ndkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
+
+    namespace "com.easypaymentposapp"
+    defaultConfig {
+        applicationId "com.easypaymentposapp"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        ndk {
+            abiFilters "armeabi-v7a"
+        }
+    }
+    signingConfigs {
+        debug {
+            storeFile file("debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            signingConfig signingConfigs.debug
+            minifyEnabled enableProguardInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+}
+
+repositories {
+    flatDir {
+        dirs "libs", "libs/pax", "libs/sunmi"
+    }
+}
+
+configurations.all {
+    exclude group: "com.android.support", module: "support-compat"
+    exclude group: "com.android.support", module: "support-core-utils"
+    exclude group: "com.android.support", module: "support-core-ui"
+    exclude group: "com.android.support", module: "support-fragment"
+    exclude group: "com.android.support", module: "support-annotations"
+    exclude group: "com.android.support", module: "support-v4"
+}
+
+dependencies {
+    implementation("com.facebook.react:react-android")
+    implementation(fileTree(dir: "libs", include: ["*.jar", "*.aar"]))
+
+    implementation(name: "pax/easypaymentpos-debug-v4.7.2", ext: "aar")
+    implementation(name: "pax/PPCompAndroid-v1.71", ext: "aar")
+    implementation(name: "pax/printer_helper", ext: "jar")
+
+    implementation("com.sunmi:printerlibrary:1.0.24")
+
+    def sunmiPayLib = file("libs/sunmi/PayLib-release-1.4.60.aar")
+    if (sunmiPayLib.exists()) {
+        implementation(name: "sunmi/PayLib-release-1.4.60", ext: "aar")
+    }
+
+    def sunmiPpComp = file("libs/sunmi/PPCompp2-v1.29.aar")
+    if (sunmiPpComp.exists()) {
+        implementation(name: "sunmi/PPCompp2-v1.29", ext: "aar")
+    }
+
+    implementation("com.google.code.gson:gson:2.8.9")
+
+    def retrofitVersion = "2.9.0"
+    implementation("com.squareup.retrofit2:retrofit:${retrofitVersion}")
+    implementation("com.squareup.retrofit2:converter-gson:${retrofitVersion}")
+    implementation("com.squareup.retrofit2:converter-simplexml:${retrofitVersion}")
+    implementation("com.squareup.retrofit2:adapter-rxjava2:${retrofitVersion}")
+    implementation("io.reactivex.rxjava2:rxandroid:2.0.1")
+
+    def okhttpVersion = "4.9.3"
+    implementation("com.squareup.okhttp3:okhttp:${okhttpVersion}")
+    implementation("com.squareup.okhttp3:logging-interceptor:${okhttpVersion}")
+
+    implementation("androidx.room:room-runtime:2.2.5")
+    kapt("androidx.room:room-compiler:2.2.5")
+    implementation("android.arch.persistence.room:runtime:1.1.1")
+    kapt("android.arch.persistence.room:compiler:1.1.1")
+
+    def cryptoVersion = "1.51.0.0"
+    implementation("com.madgag.spongycastle:core:${cryptoVersion}")
+    implementation("com.madgag.spongycastle:prov:${cryptoVersion}")
+    implementation("com.madgag.spongycastle:pkix:${cryptoVersion}")
+    implementation("com.madgag.spongycastle:pg:${cryptoVersion}")
+    implementation("org.conscrypt:conscrypt-android:2.5.1")
+
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation jscFlavor
+    }
+}
+
+apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
+applyNativeModulesAppBuildGradle(project)
